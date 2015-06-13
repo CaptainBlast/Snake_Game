@@ -4,17 +4,11 @@
 #include <vector>
 #include <ctime>
 #include <cstdlib>
-#include <random>
 #include <thread>
 #include <ncursesw/ncurses.h> // ncurses with utf-8 support
 #include <locale.h>
 #include "Snake_Game.hpp"
 #include "kbhit.hpp"
-
-#define S_TAIL '+'
-#define S_HEAD 'o'
-#define APPLE '*'
-#define WALL '-'
 
 static short row, col;
 
@@ -51,7 +45,7 @@ void Snake_Game::keyPressed()
 }
 
 // stop game for a certain time
-void stop(unsigned millisec)
+inline void stop(unsigned millisec)
 {
     const std::chrono::milliseconds timespan(millisec);
     std::this_thread::sleep_for(timespan);
@@ -60,18 +54,17 @@ void stop(unsigned millisec)
 // reset game(restart)
 void Snake_Game::reset()
 {
-    appPos = 173, SHead = 223, SDir = 4, score = 0;
-    gameMap.assign(700, ' ');
-    speed = 1.0;
+    appPos = 284, SHead = 223, SDir = 4, score = 0;
+    gameMap.assign(420, ' ');
+    speed = 115;
 
     snakePos = {224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,235,236,237,238,239,240,241,242,243};
 
-    newAppPos();                // generate apples position
     gameMap[appPos] = APPLE;    // put onto map
     // make border on map
-    for (auto i = 1; i <= 700; ++i)
+    for (auto i = 1; i <= 420; ++i)
     {
-        if (i <= 50 || i >= 651 || i % 50 == 1 || i % 50 == 0)
+        if (i <= 30 || i > 390 || i % 30 == 1 || i % 30 == 0)
             gameMap[i-1] = WALL;
     }
 }
@@ -91,18 +84,6 @@ int Snake_Game::gameOver()
     refresh();                                                    // display on screen
     stop(2500);                                                   // pause game to let user read
     return -1;                                                    // return
-}
-
-// generates new position for apple
-void Snake_Game::newAppPos()
-{
-    static std::random_device rd;
-    static std::mt19937 mt(rd());
-
-    do {
-        std::uniform_int_distribution<int> dist(52, 649); // generate a number betweeen 52 and 649
-        appPos = dist(mt);                                // assign to apple's position
-    } while(gameMap[appPos] != ' ');                      // make sure we aren't replacing anything(apple,snake,wall)
 }
 
 // to refresh the snake's trail, new apple if old one is eaten
@@ -130,10 +111,10 @@ bool Snake_Game::processTrack(const int &v)
     if (gameMap[SHead] == APPLE)
     {
         score += 4;                             // increment score
-        snakePos.push_back(*(vi.end() - 1));        // add another bit to the tail
+        snakePos.push_back(*(vi.end()));        // add another bit to the tail
 
-        if (speed != 0.55)
-            speed -= 0.005;                     // increase snake's speed
+        if (speed != 50)
+            speed -= 2;                     // increase snake's speed
         newAppPos();                            // generate new apple's position
         gameMap[appPos] = APPLE;                // add apple to the game's map
     }
@@ -156,28 +137,28 @@ void Snake_Game::graphics()
 
     if (score < 10)
     {
-        printBlock(20);
+        printBlock(10);
         printw(" Score: %d ", score);
-        printBlock(20);
+        printBlock(10);
         addstr("\n");
     }
     else if (score < 100)
     {
-        printBlock(20);
+        printBlock(10);
         printw(" Score: %d ", score);
-        printBlock(19);
+        printBlock(9);
         addstr("\n");
     } else
     {
-        printBlock(19);
+        printBlock(9);
         printw(" Score: %d ", score);
-        printBlock(19);
+        printBlock(9);
         addstr("\n");
     }
 
-    for (auto i = 1; i <= 700; ++i) // print out game map
+    for (auto i = 1; i <= 420; ++i) // print out game map
     {
-        if (i <= 50 || i >= 651 || i % 50 == 1 || i % 50 == 0)                // print top border
+        if (i <= 30 || i > 390 || i % 30 == 1 || i % 30 == 0)                // print top border
             addch(ACS_CKBOARD | COLOR_PAIR(1));
         else                                 // print actual game map
         {
@@ -204,7 +185,7 @@ void Snake_Game::graphics()
             }
         }
 
-        if (i != 0 && i % 50 == 0)  // new line for every 50th character
+        if (i != 0 && i % 30 == 0)  // new line for every 50th character
             printw("\n");
     }
 
@@ -214,41 +195,59 @@ void Snake_Game::graphics()
 // processes game
 void Snake_Game::gameLogic()
 {
-    const int &startSpeedH = 100; // starting horizontal speed
-    const int &startSpeedV = 135; // starting vertiacal speed
-    int moveBlocks = -50;
+    int moveBlocks = -1;
+
+    if (processTrack(moveBlocks)) {
+        return;
+    }
+
+    // update game map
+    gameMap[SHead] = S_HEAD;
+    for (const auto i : snakePos)
+    {
+        gameMap[i] = S_TAIL;
+    }
+
+    newAppPos();
+
+    std::clock_t start = std::clock();
 
     while (true)
     {
         if(kbhit())             // if a key has been pressed
             keyPressed();       // call keyPressed to process the key
 
-        // update snakes position
-        if (SDir == 1)
-            moveBlocks = -50;
-
-        else if (SDir == 2)
-            moveBlocks = 1;
-
-        else if (SDir == 3)
-            moveBlocks = 50;
-
-        else if (SDir == 4)
-            moveBlocks = -1;
-        // check it it's game over
-        if (processTrack(moveBlocks)) {
-            return;
-        }
-
-        // update game map
-        gameMap[SHead] = S_HEAD;
-        for (const auto i : snakePos)
+        if ((std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > 88)
         {
-            gameMap[i] = S_TAIL;
+            // update snakes position
+            if (SDir == 1)
+                moveBlocks = -30;
+
+            else if (SDir == 2)
+                moveBlocks = 1;
+
+            else if (SDir == 3)
+                moveBlocks = 30;
+
+            else if (SDir == 4)
+                moveBlocks = -1;
+            // check it it's game over
+            if (processTrack(moveBlocks)) {
+                return;
+            }
+
+            // update game map
+            gameMap[SHead] = S_HEAD;
+            for (const auto i : snakePos)
+            {
+                gameMap[i] = S_TAIL;
+            }
+            start = std::clock();
+            if (SDir % 2 == 1)
+                stop(20);
         }
 
         graphics(); // display to user
-        stop((SDir == 1 || SDir == 3) ?  speed*startSpeedV : speed*startSpeedH);  // set speed depending on direction
     }
 }
 
@@ -258,7 +257,7 @@ inline void about()
     erase();
 
     mvprintw(row/2 -2, col/2 -23, "Ncurses Snake game. Designed by CaptainBlastXD");
-    mvprintw(row/2, col/2 -14, "Under MIT license.");
+    mvprintw(row/2, col/2 -9, "Under MIT license.");
     mvprintw(row/2 +1, col/2 -5, "Thank you");
     mvprintw(row/2 +4, col/2 -3, "Return");
 
