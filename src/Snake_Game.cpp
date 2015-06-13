@@ -130,7 +130,7 @@ bool Snake_Game::processTrack(const int &v)
     if (gameMap[SHead] == APPLE)
     {
         score += 4;                             // increment score
-        snakePos.push_back(*(vi.end()));        // add another bit to the tail
+        snakePos.push_back(*(vi.end() - 1));        // add another bit to the tail
 
         if (speed != 0.55)
             speed -= 0.005;                     // increase snake's speed
