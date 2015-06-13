@@ -36,7 +36,7 @@ inline void Snake_Game::start()
     init_pair(2, COLOR_RED, COLOR_GREEN);           // colour for game map excluding border
     init_pair(3, COLOR_WHITE, COLOR_YELLOW);
     init_pair(4, COLOR_BLUE, COLOR_GREEN);          // colour for game over text
-    
+
     bkgd(COLOR_PAIR(3));
     gameLogic();
 }
