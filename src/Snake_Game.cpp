@@ -56,9 +56,9 @@ void Snake_Game::reset()
 {
     appPos = 284, SHead = 223, SDir = 4, score = 0;
     gameMap.assign(420, ' ');
-    speed = 115;
+    speed = 125;
 
-    snakePos = {224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,235,236,237,238,239,240,241,242,243};
+    snakePos = {224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,235,236, 237, 267,297,296,295,294,293};
 
     gameMap[appPos] = APPLE;    // put onto map
     // make border on map
@@ -91,14 +91,14 @@ bool Snake_Game::processTrack(const int &v)
 {
     const std::vector<unsigned> vi = snakePos;  // copy the previous vector
 
-    gameMap[*(snakePos.end()-1)] = ' ';         // remove last bit of tail
+    gameMap.at(snakePos.back()) = ' ';         // remove last bit of tail
 
     for (auto i = 1; i != snakePos.size(); ++i) // update tail positions
     {
         snakePos[i] = vi[i -1];
     }
 
-    *snakePos.begin() = SHead;                  // update tail
+    snakePos.front() = SHead;                  // update tail
     SHead += v;                                 // update head
 
     // if snake hits herself, or borders
@@ -111,10 +111,10 @@ bool Snake_Game::processTrack(const int &v)
     if (gameMap[SHead] == APPLE)
     {
         score += 4;                             // increment score
-        snakePos.push_back(*(vi.end()));        // add another bit to the tail
+        snakePos.push_back(vi.back());        // add another bit to the tail
 
-        if (speed != 50)
-            speed -= 2;                     // increase snake's speed
+        if (speed != 95)
+            --speed;                     // increase snake's speed
         newAppPos();                            // generate new apple's position
         gameMap[appPos] = APPLE;                // add apple to the game's map
     }
@@ -217,7 +217,7 @@ void Snake_Game::gameLogic()
         if(kbhit())             // if a key has been pressed
             keyPressed();       // call keyPressed to process the key
 
-        if ((std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > 88)
+        if ((std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > speed)
         {
             // update snakes position
             if (SDir == 1)
