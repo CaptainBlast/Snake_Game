@@ -1,11 +1,9 @@
 #include "Snake_Game.hpp"
 #include <iostream>
-#include <string>
-#include <vector>
 #include <ctime>
 #include <cstdlib>
 #include <thread>
-#include <ncursesw/ncurses.h> // ncurses with utf-8 support
+#include <stdexcept>
 #include <locale.h>
 #include "Snake_Game.hpp"
 #include "kbhit.hpp"
@@ -78,11 +76,12 @@ int Snake_Game::gameOver()
     attroff(A_REVERSE);                                           // Turn off reverse attribute
     erase();                                                      // clear screen
 
-    mvprintw(row/2, col/2-12, "Game Over!!! \tScore: %d", score); // tell user his score
+    mvprintw(row/2-1, col/2-9, "Game Over!!! Score: %d", score); // tell user his score
+    mvprintw(row/2+1, col/2-11, "Press any key to continue.");
     attroff(A_BOLD);                                              // turn off bold and colour attribute
 
     refresh();                                                    // display on screen
-    stop(2500);                                                   // pause game to let user read
+    std::cin.get();                                               // press any key to continue
     return -1;                                                    // return
 }
 
@@ -217,7 +216,7 @@ void Snake_Game::gameLogic()
         if(kbhit())             // if a key has been pressed
             keyPressed();       // call keyPressed to process the key
 
-        if ((std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > speed)
+        if (SDir % 2 == 1 && (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > (speed+40))
         {
             // update snakes position
             if (SDir == 1)
@@ -243,14 +242,48 @@ void Snake_Game::gameLogic()
                 gameMap[i] = S_TAIL;
             }
             start = std::clock();
-            if (SDir % 2 == 1)
-                stop(20);
-        }
 
-        graphics(); // display to user
+            graphics(); // display to user
+        }
+        else if ((std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > (speed))
+        {
+            // update snakes position
+            if (SDir == 1)
+                moveBlocks = -30;
+
+            else if (SDir == 2)
+                moveBlocks = 1;
+
+            else if (SDir == 3)
+                moveBlocks = 30;
+
+            else if (SDir == 4)
+                moveBlocks = -1;
+            // check it it's game over
+            if (processTrack(moveBlocks)) {
+                return;
+            }
+
+            // update game map
+            gameMap[SHead] = S_HEAD;
+            for (const auto i : snakePos)
+            {
+                gameMap[i] = S_TAIL;
+            }
+            start = std::clock();
+
+            graphics(); // display to user
+        }
     }
 }
 
+
+inline void checkSize(const short &row, const short &col)
+{
+    if (row < 16 || col < 31)
+        throw std::runtime_error("Terminal to small! Increase size and restart application.");
+
+}
 
 inline void about()
 {
@@ -279,13 +312,12 @@ inline void about()
         }
     }
 }
-inline void outline(const unsigned short &ch)
+inline void point(const unsigned short &ch)
 {
-    //init_pair(6,COLOR_RED, COLOR_CYAN);
     attron(COLOR_PAIR(6));
 
     static unsigned short last_val = 0;
-
+    // remove last selected
     switch(last_val)
     {
         case 1:
@@ -305,7 +337,7 @@ inline void outline(const unsigned short &ch)
             mvprintw(row/2+3, col/2+3, " ");
             break;
     }
-
+    // point to new choice
     switch(ch)
     {
         case 1:
@@ -330,21 +362,23 @@ inline void outline(const unsigned short &ch)
             return;
     }
 
-    last_val = ch;
+    last_val = ch; // save last choice
 
     attroff(COLOR_PAIR(6));
 }
 
 void menu()
 {
-    init_pair(5,COLOR_WHITE, COLOR_CYAN);
-    init_pair(6,COLOR_RED, COLOR_CYAN);
+    init_pair(5,COLOR_WHITE, COLOR_CYAN); // Menu colour
+    init_pair(6,COLOR_RED, COLOR_CYAN);   // arrow colour
 
     Snake_Game game;
-    unsigned short choice = 1;
+    unsigned short choice = 1;            // holds choice from user
 
-    getmaxyx(stdscr,row,col);
+    getmaxyx(stdscr,row,col);             // get size of the terminal
+    checkSize(row,col);                   // check size of console
 
+    // print out menu
     bkgd(COLOR_PAIR(5));
     mvprintw(row/2-3, col/2-3, "Play");
     mvprintw(row/2-1, col/2-3, "Mode");
@@ -353,7 +387,8 @@ void menu()
 
     while (true)
     {
-        outline(choice);
+        point(choice);                    // print arrows to current choice
+        // if a key was pressed
         if(kbhit())
         {
             switch (getch())              // check what key it was and take action
@@ -361,10 +396,10 @@ void menu()
                 case 'W':
                 case 'w':
                 case KEY_UP:
-                    if (choice == 1)
+                    if (choice == 1)      // move
                         choice = 4;
                     else
-                        --choice;
+                        --choice;         // choice
                         break;
 
                 case 'S':
@@ -376,23 +411,22 @@ void menu()
                         ++choice;
                     break;
 
-                case '\n':
-
+                case '\n':                 // if key was enter
+                    // take action on the choice last
                     switch (choice)
                     {
                         case 1:
-                            game.start();
+                            game.start();  // start game
                             break;
                         case 2:
                             break;
                         case 3:
                             break;
                         case 4:
-                            about();
+                            about();       // about
                             break;
-                        default:
-                            ; // throw exception
                     }
+                    // clear sreen and print menu again
                     erase();
                     bkgd(COLOR_PAIR(5));
                     mvprintw(row/2-3, col/2-3, "Play");

@@ -54,7 +54,7 @@ inline void Snake_Game::newAppPos()
     static std::mt19937 mt(rd());
 
     do {
-        std::uniform_int_distribution<int> dist(52, 649); // generate a number betweeen 52 and 649
+        std::uniform_int_distribution<int> dist(52, 389); // generate a number betweeen 52 and 649
         appPos = dist(mt);                                // assign to apple's position
     } while(gameMap[appPos] != ' ');                      // make sure we aren't replacing anything(apple,snake,wall)
 }
