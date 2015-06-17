@@ -53,12 +53,12 @@ inline void stop(unsigned millisec)
 void Snake_Game::reset()
 {
     appPos = 284, SHead = 223, SDir = 4, score = 0;
+    gameMap.reserve(420);
     gameMap.assign(420, ' ');
     speed = 125;
 
     snakePos = {224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,235,236, 237, 267,297,296,295,294,293};
 
-    gameMap[appPos] = APPLE;    // put onto map
     // make border on map
     for (auto i = 1; i <= 420; ++i)
     {
@@ -208,7 +208,7 @@ void Snake_Game::gameLogic()
     }
 
     newAppPos();
-
+    gameMap[appPos] = APPLE;
     std::clock_t start = std::clock();
 
     while (true)
