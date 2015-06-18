@@ -1,3 +1,6 @@
+// clang++ -std=c++11 main.cpp -lncursesw -Wall -c
+// clang++ -std=c++11 main.o Snake_Game.cpp -lncursesw -Wall -o t
+
 #include <ncursesw/ncurses.h>
 #include "Snake_Game.hpp"
 
@@ -15,7 +18,8 @@ int main()
     keypad(stdscr, TRUE);
     scrollok(stdscr, TRUE);
 
-    menu();
+    Snake_Game game;
+    game.start();
 
     endwin();
 

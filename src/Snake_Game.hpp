@@ -5,37 +5,41 @@
 #include <vector>
 #include <ncursesw/ncurses.h>
 #include <random>
+#include <chrono>
 
 #define S_TAIL '+'
 #define S_HEAD 'o'
 #define APPLE '*'
+#define RED_APPLE '$'
 #define WALL '-'
 
 class Snake_Game
 {
 public:
-    // initialise and start game
+    // initialise and start_game game
     Snake_Game() { reset(); }
 
     inline void start();
+    inline void start_game();
     void reset(); // reset game
 private:
     bool processTrack(const int &); // update head and tail
     void keyPressed();              // check what key was pressed
-    inline void newAppPos();               // generate new position for apple
+    inline unsigned short newPos(); // generate new position for apple
     void graphics();                // graphics
     void gameLogic();               // ...
     int gameOver();                 // called if the user wants to stop playing or they hit something
 
-    unsigned short appPos = 215, SHead = 223;   // apple position and Snake Head's position
-    unsigned short SDir = 4;                    // Snake length and direction snake is headed(1,2,3,4)
+    unsigned short SHead = 223;   // apple position and Snake Head's position
+    unsigned short SDir = 4, redAppCnt = 0, multiplier = 0, redAppPos = 0;                    // Snake length and direction snake is headed(1,2,3,4)
     unsigned score = 0;                   // score
     std::string gameMap;
-    unsigned speed = 115;
+    unsigned speed = 125;
     std::vector<unsigned> snakePos;             // positions of tail
+    bool redApp = false;
 };
 
-inline void Snake_Game::start()
+inline void Snake_Game::start_game()
 {
     reset();
     init_pair(1, COLOR_GREEN, COLOR_WHITE);         // colour for border
@@ -48,18 +52,25 @@ inline void Snake_Game::start()
 }
 
 // generates new position for apple
-inline void Snake_Game::newAppPos()
+inline unsigned short Snake_Game::newPos()
 {
     static std::random_device rd;
     static std::mt19937 mt(rd());
 
+    unsigned short pos = 0;
+
     do {
         std::uniform_int_distribution<int> dist(52, 389); // generate a number betweeen 52 and 649
-        appPos = dist(mt);                                // assign to apple's position
-    } while(gameMap[appPos] != ' ');                      // make sure we aren't replacing anything(apple,snake,wall)
+        pos = dist(mt);                                // assign to apple's position
+    } while(gameMap[pos] != ' ');                      // make sure we aren't replacing anything
+    return pos;
 }
 
+void menu(Snake_Game &);
 
-void menu();
+inline void Snake_Game::start()
+{
+    menu(*this);
+}
 
 #endif

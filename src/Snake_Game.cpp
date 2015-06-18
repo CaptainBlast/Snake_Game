@@ -1,6 +1,5 @@
 #include "Snake_Game.hpp"
 #include <iostream>
-#include <ctime>
 #include <cstdlib>
 #include <thread>
 #include <stdexcept>
@@ -49,15 +48,16 @@ inline void stop(unsigned millisec)
     std::this_thread::sleep_for(timespan);
 }
 
-// reset game(restart)
+// reset game(restart_game)
 void Snake_Game::reset()
 {
-    appPos = 284, SHead = 223, SDir = 4, score = 0;
+    redApp = false;
+    redAppCnt = 0, multiplier = 0, SHead = 223, SDir = 4, score = 0;
     gameMap.reserve(420);
     gameMap.assign(420, ' ');
-    speed = 125;
+    speed = 135;
 
-    snakePos = {224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,235,236, 237, 267,297,296,295,294,293};
+    snakePos = {224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,235,236, 237, 267,297};
 
     // make border on map
     for (auto i = 1; i <= 420; ++i)
@@ -110,17 +110,31 @@ bool Snake_Game::processTrack(const int &v)
     if (gameMap[SHead] == APPLE)
     {
         score += 4;                             // increment score
+        ++redAppCnt;
+
         snakePos.push_back(vi.back());        // add another bit to the tail
 
-        if (speed != 95)
+        if (speed != 100)
             --speed;                     // increase snake's speed
-        newAppPos();                            // generate new apple's position
-        gameMap[appPos] = APPLE;                // add apple to the game's map
+        gameMap[newPos()] = APPLE;                // add new apple to the game's map
+        if (redAppCnt == 6)
+        {
+            redApp = true;
+            gameMap[(redAppPos = newPos())] = RED_APPLE;
+            redAppCnt = 0;
+        }
     }
+    else if (gameMap[SHead] == RED_APPLE)
+    {
+        score += (4*multiplier);                   // increase score
+        multiplier = 0;
+        redApp = false;
+    }
+
     return false;
 }
 
-inline void printBlock(unsigned cnt = 1)
+inline void printCircle(unsigned short cnt = 1)
 {
     while (cnt != 0)
     {
@@ -128,30 +142,56 @@ inline void printBlock(unsigned cnt = 1)
         --cnt;
     }
 }
+inline void printBlock(unsigned short cnt = 2)
+{
+    if (cnt == 0)
+    {
+        return;
+    }
+    else if (cnt % 2 == 0)
+    {
+        while (cnt != 0)
+        {
+            addstr("\u2588");
+            --cnt;
+        }
+    }
+    else
+    {
+        while (cnt != 1)
+        {
+            addstr("\u2588");
+            --cnt;
+        }
+        addstr("\u258B");
+    }
+}
 
 // output graphics
 void Snake_Game::graphics()
 {
+    static auto redAppTimer = std::chrono::high_resolution_clock::now();
+
     erase();                        // clear screen
 
     if (score < 10)
     {
-        printBlock(10);
+        printCircle(10);
         printw(" Score: %d ", score);
-        printBlock(10);
+        printCircle(10);
         addstr("\n");
     }
     else if (score < 100)
     {
-        printBlock(10);
+        printCircle(10);
         printw(" Score: %d ", score);
-        printBlock(9);
+        printCircle(9);
         addstr("\n");
     } else
     {
-        printBlock(9);
+        printCircle(9);
         printw(" Score: %d ", score);
-        printBlock(9);
+        printCircle(9);
         addstr("\n");
     }
 
@@ -166,17 +206,26 @@ void Snake_Game::graphics()
                 attron(COLOR_PAIR(4));
                 addstr("\u25CF");
                 attroff(COLOR_PAIR(4));
-            } else if (gameMap[i-1] == S_HEAD)
+            }
+            else if (gameMap[i-1] == RED_APPLE)
+            {
+                attron(COLOR_PAIR(2));
+                addstr("\u25C9");
+                attroff(COLOR_PAIR(2));
+            }
+            else if (gameMap[i-1] == S_HEAD)
             {
                 attron(COLOR_PAIR(2));
                 addstr("\u2588");
                 attroff(COLOR_PAIR(2));
-            } else if (gameMap[i-1] == S_TAIL)
+            }
+            else if (gameMap[i-1] == S_TAIL)
             {
                 attron(COLOR_PAIR(2));
                 addstr("\u2593");
                 attroff(COLOR_PAIR(2));
-            } else
+            }
+            else
             {
                 attron(COLOR_PAIR(2));
                 printw("%c", gameMap[i-1]);
@@ -187,6 +236,36 @@ void Snake_Game::graphics()
         if (i != 0 && i % 30 == 0)  // new line for every 50th character
             printw("\n");
     }
+
+    addstr("\n");
+    printw("      %d     ", redAppCnt);
+
+    if (redApp)
+    {
+        if (multiplier == 0)
+            multiplier = 10;
+
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+            (std::chrono::high_resolution_clock::now() - redAppTimer)).count() > 400)
+        {
+            --multiplier;
+            if (multiplier == 0)
+            {
+                if (gameMap[redAppPos] == RED_APPLE)
+                    gameMap[redAppPos] = ' ';
+                redApp = false;
+            }
+            redAppTimer = std::chrono::high_resolution_clock::now();
+        }
+
+    }
+    if (multiplier > 0)
+    {
+        printw(" %d ", multiplier);
+        printBlock(multiplier);
+    }
+
+    addstr("\n");
 
     refresh();                      // display on screen
 }
@@ -207,16 +286,16 @@ void Snake_Game::gameLogic()
         gameMap[i] = S_TAIL;
     }
 
-    newAppPos();
-    gameMap[appPos] = APPLE;
-    std::clock_t start = std::clock();
+    gameMap[newPos()] = APPLE;
+    auto start_game = std::chrono::high_resolution_clock::now();
 
     while (true)
     {
         if(kbhit())             // if a key has been pressed
             keyPressed();       // call keyPressed to process the key
 
-        if (SDir % 2 == 1 && (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > (speed+40))
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+            (std::chrono::high_resolution_clock::now() - start_game)).count() > (speed+65))
         {
             // update snakes position
             if (SDir == 1)
@@ -241,11 +320,10 @@ void Snake_Game::gameLogic()
             {
                 gameMap[i] = S_TAIL;
             }
-            start = std::clock();
-
-            graphics(); // display to user
+            start_game = std::chrono::high_resolution_clock::now();
         }
-        else if ((std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) > (speed))
+        else if (std::chrono::duration_cast<std::chrono::milliseconds>(
+            (std::chrono::high_resolution_clock::now() - start_game)).count() > (speed))
         {
             // update snakes position
             if (SDir == 1)
@@ -270,10 +348,9 @@ void Snake_Game::gameLogic()
             {
                 gameMap[i] = S_TAIL;
             }
-            start = std::clock();
-
-            graphics(); // display to user
+            start_game = std::chrono::high_resolution_clock::now();
         }
+        graphics(); // display to user
     }
 }
 
@@ -281,7 +358,7 @@ void Snake_Game::gameLogic()
 inline void checkSize(const short &row, const short &col)
 {
     if (row < 16 || col < 31)
-        throw std::runtime_error("Terminal to small! Increase size and restart application.");
+        throw std::runtime_error("Terminal to small! Increase size and restart_game application.");
 
 }
 
@@ -367,12 +444,11 @@ inline void point(const unsigned short &ch)
     attroff(COLOR_PAIR(6));
 }
 
-void menu()
+void menu(Snake_Game &game)
 {
     init_pair(5,COLOR_WHITE, COLOR_CYAN); // Menu colour
     init_pair(6,COLOR_RED, COLOR_CYAN);   // arrow colour
 
-    Snake_Game game;
     unsigned short choice = 1;            // holds choice from user
 
     getmaxyx(stdscr,row,col);             // get size of the terminal
@@ -416,7 +492,7 @@ void menu()
                     switch (choice)
                     {
                         case 1:
-                            game.start();  // start game
+                            game.start_game();  // start_game game
                             break;
                         case 2:
                             break;
