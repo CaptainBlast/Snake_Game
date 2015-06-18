@@ -142,7 +142,7 @@ inline void printCircle(unsigned short cnt = 1)
         --cnt;
     }
 }
-inline void printBlock(unsigned short cnt = 2)
+inline void printSideBlock(unsigned short cnt = 2)
 {
     if (cnt == 0)
     {
@@ -167,33 +167,13 @@ inline void printBlock(unsigned short cnt = 2)
     }
 }
 
+
 // output graphics
 void Snake_Game::graphics()
 {
     static auto redAppTimer = std::chrono::high_resolution_clock::now();
 
     erase();                        // clear screen
-
-    if (score < 10)
-    {
-        printCircle(10);
-        printw(" Score: %d ", score);
-        printCircle(10);
-        addstr("\n");
-    }
-    else if (score < 100)
-    {
-        printCircle(10);
-        printw(" Score: %d ", score);
-        printCircle(9);
-        addstr("\n");
-    } else
-    {
-        printCircle(9);
-        printw(" Score: %d ", score);
-        printCircle(9);
-        addstr("\n");
-    }
 
     for (auto i = 1; i <= 420; ++i) // print out game map
     {
@@ -237,8 +217,28 @@ void Snake_Game::graphics()
             printw("\n");
     }
 
-    addstr("\n");
-    printw("      %d     ", redAppCnt);
+    // print boarder
+    attron(COLOR_PAIR(8));
+    for (auto cnt = 30; cnt != 0; --cnt)
+    {
+        addstr("\u2580");
+    }
+
+    mvprintw(15, 3, "%d\n", score);
+    mvprintw(15, 26, "%d\n", redAppCnt);
+
+    for (auto cnt = 30; cnt != 0; --cnt)
+    {
+        addstr("\u2584");
+    }
+
+    mvprintw(14, 0, "\u2588");
+    mvprintw(15, 0, "\u2588");
+    mvprintw(16, 0, "\u2588");
+    mvprintw(14, 29, "\u2588");
+    mvprintw(15, 29, "\u2588");
+    mvprintw(16, 29, "\u2588");
+    attroff(COLOR_PAIR(8));
 
     if (redApp)
     {
@@ -261,11 +261,11 @@ void Snake_Game::graphics()
     }
     if (multiplier > 0)
     {
-        printw(" %d ", multiplier);
-        printBlock(multiplier);
+        attron(COLOR_PAIR(7) | A_BOLD);
+        mvprintw(15, 10, "%d ", multiplier);
+        printSideBlock(multiplier);
+        attroff(COLOR_PAIR(7) | A_BOLD);
     }
-
-    addstr("\n");
 
     refresh();                      // display on screen
 }
@@ -398,40 +398,48 @@ inline void point(const unsigned short &ch)
     switch(last_val)
     {
         case 1:
-            mvprintw(row/2-3, col/2-6, " ");
-            mvprintw(row/2-3, col/2+3, " ");
+            mvprintw(row/2-4, col/2-6, " ");
+            mvprintw(row/2-4, col/2+3, " ");
             break;
         case 2:
-            mvprintw(row/2-1, col/2-6, " ");
-            mvprintw(row/2-1, col/2+3, " ");
+            mvprintw(row/2-2, col/2-6, " ");
+            mvprintw(row/2-2, col/2+3, " ");
             break;
         case 3:
-            mvprintw(row/2+1, col/2-6, " ");
-            mvprintw(row/2+1, col/2+3, " ");
+            mvprintw(row/2, col/2-6, " ");
+            mvprintw(row/2, col/2+3, " ");
             break;
         case 4:
-            mvprintw(row/2+3, col/2-6, " ");
-            mvprintw(row/2+3, col/2+3, " ");
+            mvprintw(row/2+2, col/2-6, " ");
+            mvprintw(row/2+2, col/2+3, " ");
+            break;
+        case 5:
+            mvprintw(row/2+4, col/2-6, " ");
+            mvprintw(row/2+4, col/2+3, " ");
             break;
     }
     // point to new choice
     switch(ch)
     {
         case 1:
-            mvprintw(row/2-3, col/2-6, ">");
-            mvprintw(row/2-3, col/2+3, "<");
+            mvprintw(row/2-4, col/2-6, ">");
+            mvprintw(row/2-4, col/2+3, "<");
             break;
         case 2:
-            mvprintw(row/2-1, col/2-6, ">");
-            mvprintw(row/2-1, col/2+3, "<");
+            mvprintw(row/2-2, col/2-6, ">");
+            mvprintw(row/2-2, col/2+3, "<");
             break;
         case 3:
-            mvprintw(row/2+1, col/2-6, ">");
-            mvprintw(row/2+1, col/2+3, "<");
+            mvprintw(row/2, col/2-6, ">");
+            mvprintw(row/2, col/2+3, "<");
             break;
         case 4:
-            mvprintw(row/2+3, col/2-6, ">");
-            mvprintw(row/2+3, col/2+3, "<");
+            mvprintw(row/2+2, col/2-6, ">");
+            mvprintw(row/2+2, col/2+3, "<");
+            break;
+        case 5:
+            mvprintw(row/2+4, col/2-6, ">");
+            mvprintw(row/2+4, col/2+3, "<");
             break;
         default:
             // should throw  excepion
@@ -442,6 +450,16 @@ inline void point(const unsigned short &ch)
     last_val = ch; // save last choice
 
     attroff(COLOR_PAIR(6));
+}
+
+inline void printMenu()
+{
+    mvprintw(row/2-4, col/2-3, "Play");
+    mvprintw(row/2-2, col/2-3, "Mode");
+    mvprintw(row/2, col/2-3, "Level");
+    mvprintw(row/2+2, col/2-3, "About");
+    mvprintw(row/2+4, col/2-3, "Exit");
+
 }
 
 void menu(Snake_Game &game)
@@ -456,10 +474,7 @@ void menu(Snake_Game &game)
 
     // print out menu
     bkgd(COLOR_PAIR(5));
-    mvprintw(row/2-3, col/2-3, "Play");
-    mvprintw(row/2-1, col/2-3, "Mode");
-    mvprintw(row/2+1, col/2-3, "Level");
-    mvprintw(row/2+3, col/2-3, "About");
+    printMenu();
 
     while (true)
     {
@@ -473,7 +488,7 @@ void menu(Snake_Game &game)
                 case 'w':
                 case KEY_UP:
                     if (choice == 1)      // move
-                        choice = 4;
+                        choice = 5;
                     else
                         --choice;         // choice
                         break;
@@ -481,7 +496,7 @@ void menu(Snake_Game &game)
                 case 'S':
                 case 's':
                 case KEY_DOWN:
-                    if (choice == 4)
+                    if (choice == 5)
                         choice = 1;
                     else
                         ++choice;
@@ -501,14 +516,13 @@ void menu(Snake_Game &game)
                         case 4:
                             about();       // about
                             break;
+                        case 5:
+                            return;
                     }
                     // clear sreen and print menu again
                     erase();
                     bkgd(COLOR_PAIR(5));
-                    mvprintw(row/2-3, col/2-3, "Play");
-                    mvprintw(row/2-1, col/2-3, "Mode");
-                    mvprintw(row/2+1, col/2-3, "Level");
-                    mvprintw(row/2+3, col/2-3, "About");
+                    printMenu();
                     break;
             }
         }

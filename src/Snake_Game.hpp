@@ -44,8 +44,11 @@ inline void Snake_Game::start_game()
     reset();
     init_pair(1, COLOR_GREEN, COLOR_WHITE);         // colour for border
     init_pair(2, COLOR_RED, COLOR_GREEN);           // colour for game map excluding border
-    init_pair(3, COLOR_WHITE, COLOR_YELLOW);
+    init_pair(3, COLOR_WHITE, COLOR_YELLOW);        // background
     init_pair(4, COLOR_BLUE, COLOR_GREEN);          // colour for game over text
+    init_pair(7,COLOR_RED, COLOR_YELLOW);           // Counter colour
+    init_pair(8,COLOR_BLUE, COLOR_YELLOW);           // Counter colour
+
 
     bkgd(COLOR_PAIR(3));
     gameLogic();
